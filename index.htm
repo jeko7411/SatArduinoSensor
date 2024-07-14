@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensores Sat Arduino</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-title {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .chart-value {
+            text-align: center;
+            font-size: 1.2em;
+            color: #007bff;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header class="bg-primary text-white text-center py-5">
+        <h1>Sensores Sat Arduino</h1>
+        <p>Monitoreo de datos en tiempo real para un mejor control.</p>
+    </header>
+    
+    <main class="container mt-4">
+        <section class="text-center mb-4">
+            <h2 class="font-weight-bold">Datos en Gráfico</h2>
+            <p class="text-muted">Visualización clara y concisa de los datos obtenidos.</p>
+        </section>
+        
+        <div class="row mb-4">
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <canvas id="myChart1"></canvas>
+                        <div class="chart-title">Humedad (%)</div>
+                        <div class="chart-value" id="value1">0%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <canvas id="myChart2"></canvas>
+                        <div class="chart-title">Temperatura (°C)</div>
+                        <div class="chart-value" id="value2">0°C</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <canvas id="myChart3"></canvas>
+                        <div class="chart-title">Lluvia (mm)</div>
+                        <div class="chart-value" id="value3">0mm</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <canvas id="myChart4"></canvas>
+                        <div class="chart-title">Distancia (m)</div>
+                        <div class="chart-value" id="value4">0m</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <canvas id="myChart5"></canvas>
+                        <div class="chart-title">CO (ppm)</div>
+                        <div class="chart-value" id="value5">0ppm</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="bg-dark text-white text-center py-3">
+        <p>&copy; 2024 Sensores Sat Arduino. Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+        let myCharts = [];
+        const currentValues = [0, 0, 0, 0, 0]; // Array para almacenar valores actuales
+
+        const createChart = (ctx, label, data) => {
+            return new Chart(ctx, {
+                type: 'line', // Gráfico de líneas
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        fill: true // Relleno bajo la línea
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Valor'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Fecha'
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
+        const fetchDataAndUpdateCharts = () => {
+            fetch('https://api.thingspeak.com/channels/2598147/feeds.json?api_key=CKW23E2ED9JT2JQC&results=10')
+                .then(response => response.json())
+                .then(data => {
+                    const feeds = data.feeds;
+                    const labels = feeds.map(feed => feed.created_at);
+                    const field1Data = feeds.map(feed => feed.field1 || 0); // Humedad
+                    const field2Data = feeds.map(feed => feed.field2 || 0); // Temperatura
+                    const field3Data = feeds.map(feed => feed.field3 || 0); // Lluvia
+                    const field4Data = feeds.map(feed => feed.field4 || 0); // Distancia
+                    const field5Data = feeds.map(feed => feed.field5 || 0); // CO
+
+                    // Update each chart with new data
+                    updateChart(myCharts[0], labels, field1Data);
+                    updateChart(myCharts[1], labels, field2Data);
+                    updateChart(myCharts[2], labels, field3Data);
+                    updateChart(myCharts[3], labels, field4Data);
+                    updateChart(myCharts[4], labels, field5Data);
+
+                    // Update current values
+                    currentValues[0] = field1Data[field1Data.length - 1];
+                    currentValues[1] = field2Data[field2Data.length - 1];
+                    currentValues[2] = field3Data[field3Data.length - 1];
+                    currentValues[3] = field4Data[field4Data.length - 1];
+                    currentValues[4] = field5Data[field5Data.length - 1];
+
+                    // Update displayed values
+                    document.getElementById('value1').innerText = currentValues[0] + '%';
+                    document.getElementById('value2').innerText = currentValues[1] + '°C';
+                    document.getElementById('value3').innerText = currentValues[2] + 'mm';
+                    document.getElementById('value4').innerText = currentValues[3] + 'm';
+                    document.getElementById('value5').innerText = currentValues[4] + 'ppm';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        };
+
+        const updateChart = (chart, labels, data) => {
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = data;
+            chart.update();
+        };
+
+        // Initialize charts
+        myCharts.push(createChart(document.getElementById('myChart1'), 'Humedad (%)', []));
+        myCharts.push(createChart(document.getElementById('myChart2'), 'Temperatura (°C)', []));
+        myCharts.push(createChart(document.getElementById('myChart3'), 'Lluvia (mm)', []));
+        myCharts.push(createChart(document.getElementById('myChart4'), 'Distancia (m)', []));
+        myCharts.push(createChart(document.getElementById('myChart5'), 'CO (ppm)', []));
+
+        // Initial fetch
+        fetchDataAndUpdateCharts();
+        
+        // Fetch new data every second
+        setInterval(fetchDataAndUpdateCharts, 1000);
+    </script>
+</body>
+</html>
