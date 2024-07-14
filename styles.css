@@ -15,12 +15,14 @@ header {
     display: flex;
     justify-content: center;
     margin: 20px 0;
+    flex-wrap: wrap; /* Permite que los cuadros se ajusten si hay menos */
 }
 
 .column {
     flex: 1;
     padding: 10px;
     max-width: 400px; /* Limita el ancho de cada columna */
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
 }
 
 .card {
